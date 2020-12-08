@@ -219,6 +219,7 @@ def transform_data_for_Sector(data):
 
 #result = create_df_Sector('20201204')
 
+
 #print(get_all_stock_Sector_history(20201204))
 #抓取類股資訊
 def Find_Sector(date):
@@ -243,8 +244,8 @@ else:
   print("是休息日")
 
 '''
-start='2020-11-10'
-end='2020-11-30'
+start='2020-03-01'
+end='2020-10-31'
  
 datestart=datetime.datetime.strptime(start,'%Y-%m-%d')
 dateend=datetime.datetime.strptime(end,'%Y-%m-%d')
