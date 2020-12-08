@@ -198,10 +198,13 @@ def create_df_Sector(date,typeno):
     r = requests.get(url)
     time.sleep(random.randint(2, 10))
     if(r.text != '{"stat":"很抱歉，沒有符合條件的資料!"}'): 
-        s = pd.DataFrame(get_all_stock_Sector_history(date,typeno))                                                          
-        s.columns = ['stockno','stockname','shares_qty','tx_qty','tx_price','opening_price','highest_price','lowest_price','closing_price','up_down','up_down_spread','last_bidprice','last_bidvolume','last_askprice','last_askvolume','PE_ratio']  
-        s['datecode'] = date
-        s['stocktype'] = typeno
+        try:
+            s = pd.DataFrame(get_all_stock_Sector_history(date,typeno))                                                          
+            s.columns = ['stockno','stockname','shares_qty','tx_qty','tx_price','opening_price','highest_price','lowest_price','closing_price','up_down','up_down_spread','last_bidprice','last_bidvolume','last_askprice','last_askvolume','PE_ratio']  
+            s['datecode'] = date
+            s['stocktype'] = typeno
+        except:
+            s=''
     else:
         s=''
     return s
@@ -230,8 +233,32 @@ def Find_Sector(date):
 
 ######類股測試###End##
 
+import datetime
+'''
+date = datetime.datetime(2019, 8, 16)
+if is_workday(date):
+  Find_Sector('20201204')
+  print("是工作日")
+else:
+  print("是休息日")
 
-Find_Sector('20201204')
+'''
+start='2020-11-10'
+end='2020-11-30'
+ 
+datestart=datetime.datetime.strptime(start,'%Y-%m-%d')
+dateend=datetime.datetime.strptime(end,'%Y-%m-%d')
+ 
+while datestart<dateend:
+    print(datestart) 
+    weekno = datestart.weekday()
+    if weekno < 5:
+        Find_Sector(datestart.strftime('%Y%m%d'))
+    datestart+=datetime.timedelta(days=1)
+
+        #print(datestart.strftime('%Y%m%d'))
+
+
 #print(s.strip().lstrip().rstrip(','))
 #print(pd.DataFrame(twstock.codes['0050']).replace(' ', '') )
 
