@@ -209,16 +209,10 @@ def create_df_Sector(date,typeno):
         s=''
     return s
 
-
-
 def transform_data_for_Sector(data):   
     data[0] = data[0]
 
     return data    
-
-
-#result = create_df_Sector('20201204')
-
 
 #print(get_all_stock_Sector_history(20201204))
 #抓取類股資訊
@@ -234,27 +228,79 @@ def Find_Sector(date):
 
 ######類股測試###End##
 
-import datetime
-'''
-date = datetime.datetime(2019, 8, 16)
-if is_workday(date):
-  Find_Sector('20201204')
-  print("是工作日")
-else:
-  print("是休息日")
 
-'''
-start='2020-03-01'
-end='2020-10-31'
+######三大法人測試###Start##
+#INS_Investor
+def get_all_stock_INS_Investor_history(date,typeno): #類股
+    quotes = []
+    url = 'https://www.twse.com.tw/fund/T86?response=json&date=%s&type=%s' % (date,typeno) #typemo = 類股編號
+    print(url)
+    r = requests.get(url)
+    data = r.json()
+    return transform_data_for_INS_Investor(data['data'])  #進行資料格式轉換
+
+def transform_INS_Investor(data,typeno):
+    return [transform_data_for_INS_Investor(d) for d in data]
+
+def create_df_INS_Investor(date,typeno):
+#refer to data format 
+#https://www.twse.com.tw/fund/T86?response=json&date=20201209&selectType=01
+#"證券代號","證券名稱"  ,"外陸資買進股數(不含外資自營商)"   ,"外陸資賣出股數(不含外資自營商)"  ,"外陸資買賣超股數(不含外資自營商)"  ,"外資自營商買進股數"          ,"外資自營商賣出股數"             ,"外資自營商買賣超股數"       ,"投信買進股數"              ,"投信賣出股數"           ,"投信買賣超股數"      ,"自營商買賣超股數"            ,"自營商買進股數(自行買賣)"       ,"自營商賣出股數(自行買賣)"   ,"自營商買賣超股數(自行買賣)"  ,"自營商買進股數(避險)"      ,"自營商賣出股數(避險)"          ,"自營商買賣超股數(避險)"   ,"三大法人買賣超股數"
+#"1103"    ,"嘉泥"      ,"219,000"                          ,"26,000"                          ,"193,000"                           ,"0"                           ,"0"                              ,"0"                          ,"0"                         ,"0"                      ,"0"                   ,"-19,000"                     ,"0"                              ,"0"                          ,"0"                           ,"0"                         ,"19,000"                        ,"-19,000"                  ,"174,000"
+#'stockno','stockname'  ,'f_inv_noDealer_buy_qty'          ,'f_inv_noDealer_sell_qty'          ,'f_inv_noDealer_OBOS'               ,'f_inv_dealer_buy_qty'        ,'f_inv_dealer_sell_qty'          ,'f_inv_dealer_OBOS'          ,'f_inv_trust_buy_qty'       ,'f_inv_trust_sell_qty'   ,'f_inv_trust_OBOS'    ,'dealer_OBOS'                 ,'dealer_self_buy_qty'            ,'dealer_self_sell_qty'       ,'dealer_self_OBOS'           ,'dealer_Hedging_buy_qty'     ,'dealer_Hedging_sell_qty'       ,'dealer_Hedging_OBOS'      ,'INS_inv_OBOS'
+#備註 inv= Investment 
+    url = 'https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=%s&type=%s' % (date,typeno) #typemo = 類股編號
+    r = requests.get(url)
+    time.sleep(random.randint(2, 10))
+    if(r.text != '{"stat":"很抱歉，沒有符合條件的資料!"}'): 
+        try:
+            s = pd.DataFrame(get_all_stock_INS_Investor_history(date,typeno))                                                          
+            s.columns = ['stockno','stockname','f_inv_noDealer_buy_qty','f_inv_noDealer_sell_qty','f_inv_noDealer_OBOS','f_inv_dealer_buy_qty','f_inv_dealer_sell_qty','f_inv_dealer_OBOS','f_inv_trust_buy_qty','f_inv_trust_sell_qty','f_inv_trust_OBOS','dealer_OBOS','dealer_self_buy_qty','dealer_self_sell_qty','dealer_self_OBOS','dealer_Hedging_buy_qty','dealer_Hedging_sell_qty','dealer_Hedging_OBOS','INS_inv_OBOS']  
+            s['datecode'] = date
+        except:
+            s=''
+    else:
+        s=''
+    return s
+
+def transform_data_for_INS_Investor(data):   
+    data[0] = data[0]
+
+    return data    
+
+#print(get_all_stock_INS_Investor_history(20201204))
+#抓取三大法人資訊
+def Find_INS_Investor(date):
+    i = 1 
+    for i in range(1,31): #總共30種類股
+        time.sleep(2)
+        result = create_df_INS_Investor(date,str(i).zfill(2))
+        if len(result) != 0 :
+            conn = create_engine(GetSQLconn())
+            table_name = "Stock_History_INS_Investor"
+            result.to_sql(table_name, conn, index=False, if_exists="append")
+
+######三大法人測試###End##
+
+
+
+import datetime
+
+#主程式執行
+start='2020-10-29'
+end='2020-12-09'
  
 datestart=datetime.datetime.strptime(start,'%Y-%m-%d')
 dateend=datetime.datetime.strptime(end,'%Y-%m-%d')
  
-while datestart<dateend:
+while datestart<=dateend:
     print(datestart) 
     weekno = datestart.weekday()
-    if weekno < 5:
-        Find_Sector(datestart.strftime('%Y%m%d'))
+    if weekno < 5:  #只抓週一到週五
+        #Step 1, 各類股
+        #Find_Sector(datestart.strftime('%Y%m%d'))
+        #Step 2, 三大法人
+        Find_INS_Investor(datestart.strftime('%Y%m%d'))
     datestart+=datetime.timedelta(days=1)
 
         #print(datestart.strftime('%Y%m%d'))
@@ -280,78 +326,3 @@ while datestart<dateend:
 #for i in range(len(listDji)):
 #    #result = create_df(dateformat, listDji[i])
 #    print(result)
-
-
-#寫進資料庫
-'''
-conn = create_engine(GetSQLconn())
-#create_engine('mssql+pyodbc://sa:test@DESKTOP-38EB22K/STOCK_ETL?driver=SQL+Server+Native+Client+11.0')
-listDji = ['2330']
-x = datetime.datetime.now() 
-dateformat ='%s%s%s' % ( x.year , x.month , x.day)
-for i in range(len(listDji)):
-    result = create_df(dateformat, listDji[i])
-    #print(result)
-table_name = "STOCK_History"
-#Import DB
-result.to_sql(table_name, conn, index=False, if_exists="append")
-'''
-
-
-"""畫圖測試
-#畫圖
-# import matplotlib相關套件
-import matplotlib.pyplot as plt
-# import字型管理套件
-from matplotlib.font_manager import FontProperties
-# 指定使用字型和大小
-
-#myfont = FontProperties(fname='C:\Windows\Fonts\Calibri\calibri.ttf', size=40)
-
-# 使用月份當做X軸資料
-
-month = [1,2,3,4,5,6,7,8,9,10,11,12]
-
-# 使用台G電的某年每月收盤價當第一條線的資料
-
-stock_tsmcc = [255,246,247.5,227,224,216.5,246,256,262.5,234,225.5,225.5]
-
-# 使用紅海的某年每月收盤價當第二條線的資料
-
-stock_foxconnn = [92.2,88.1,88.5,82.9,85.7,83.2,83.8,80.5,79.2,78.8,71.9,70.8]
-
-# 設定圖片大小為長15、寬10
-plt.figure(figsize=(15,10),dpi=100,linewidth = 2)
-
-# 把資料放進來並指定對應的X軸、Y軸的資料，用方形做標記(s-)，並指定線條顏色為紅色，使用label標記線條含意
-plt.plot(month,stock_tsmcc,'s-',color = 'r', label="TSMC")
-
-# 把資料放進來並指定對應的X軸、Y軸的資料 用圓形做標記(o-)，並指定線條顏色為綠色、使用label標記線條含意
-plt.plot(month,stock_foxconnn,'o-',color = 'g', label="FOXCONN")
-
-# 設定圖片標題，以及指定字型設定，x代表與圖案最左側的距離，y代表與圖片的距離
-
-plt.title("Python 畫折線圖(Line chart)範例")
-
-# 设置刻度字体大小
-
-plt.xticks(fontsize=20)
-
-plt.yticks(fontsize=20)
-
-# 標示x軸(labelpad代表與圖片的距離)
-
-plt.xlabel("month", fontsize=30, labelpad = 15)
-
-# 標示y軸(labelpad代表與圖片的距離)
-
-plt.ylabel("price", fontsize=30, labelpad = 20)
-
-# 顯示出線條標記位置
-
-plt.legend(loc = "best", fontsize=20)
-
-# 畫出圖片
-
-plt.show()
-"""
